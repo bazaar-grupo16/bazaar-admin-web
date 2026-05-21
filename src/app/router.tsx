@@ -5,16 +5,25 @@ import { MetricsPage } from '../pages/metrics/MetricsPage'
 import { OrdersPage } from '../pages/orders/OrdersPage'
 import { ProductsPage } from '../pages/products/ProductsPage'
 import { UsersPage } from '../pages/users/UsersPage'
+import { ProtectedRoute, PublicOnlyRoute } from '../shared/auth'
 import { AdminLayout } from '../shared/ui/AdminLayout'
 
 export const router = createBrowserRouter([
   {
     path: '/login',
-    element: <LoginPage />,
+    element: (
+      <PublicOnlyRoute>
+        <LoginPage />
+      </PublicOnlyRoute>
+    ),
   },
   {
     path: '/',
-    element: <AdminLayout />,
+    element: (
+      <ProtectedRoute>
+        <AdminLayout />
+      </ProtectedRoute>
+    ),
     children: [
       {
         index: true,
