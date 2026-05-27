@@ -6,13 +6,20 @@ import { useAuth } from "../../shared/auth";
 
 const PAGE_SIZE = 10;
 
+function formatDate(isoString: string) {
+  if (!isoString) return "-";
+  const datePart = isoString.split("T")[0]; 
+  const [year, month, day] = datePart.split("-");
+  return `${day}/${month}/${year}`;
+}
+
 export function UsersPage() {
   const { admin } = useAuth();
   const queryClient = useQueryClient();
   
   // ── Estados ──
   const [searchInput, setSearchInput] = useState("");
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(""); 
   const [page, setPage] = useState(1);
   const [toast, setToast] = useState<{msg: string, type: 'success' | 'error'} | null>(null);
 
@@ -25,8 +32,8 @@ export function UsersPage() {
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
       setSearch(searchInput);
-      setPage(1);
-    }, 500); 
+      setPage(1); 
+    }, 500);
 
     return () => clearTimeout(delayDebounceFn);
   }, [searchInput]);
@@ -102,6 +109,7 @@ export function UsersPage() {
               <tr>
                 <th>Nombre</th>
                 <th>Email</th>
+                <th>Fecha de Registro</th>
                 <th>Rol</th>
                 <th>Estado</th>
                 <th>Acciones</th>
@@ -110,19 +118,19 @@ export function UsersPage() {
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={5} className="table-message-cell">
+                  <td colSpan={6} className="table-message-cell">
                     Cargando usuarios...
                   </td>
                 </tr>
               ) : isError ? (
                 <tr>
-                  <td colSpan={5} className="table-message-cell error-text">
+                  <td colSpan={6} className="table-message-cell error-text">
                     Error al conectar con la API: {(error as any)?.response?.data?.detail || "Desconocido"}
                   </td>
                 </tr>
               ) : users.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="table-message-cell">
+                  <td colSpan={6} className="table-message-cell">
                     No se encontraron usuarios registrados.
                   </td>
                 </tr>
@@ -134,6 +142,7 @@ export function UsersPage() {
                     <tr key={user.id}>
                       <td>{user.name || "Sin nombre"}</td>
                       <td>{user.email}</td>
+                      <td>{formatDate(user.created_at)}</td> {/* 👈 RENDERIZADO DE FECHA */}
                       <td>
                         <span className={`role-badge ${user.is_admin ? 'admin' : 'user'}`}>
                           {user.is_admin ? "Admin" : "Usuario"}
