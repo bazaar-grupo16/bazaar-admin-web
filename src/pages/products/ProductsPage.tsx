@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { Search, ChevronRight, X, ArrowLeft, ArrowRight } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
-import { getProducts, getSellerProfile, type AdminProduct } from "../../shared/api/products";
+import { Search, ChevronRight, X, ArrowLeft, ArrowRight, Eye, EyeOff } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getProducts, getSellerProfile, blockProduct, unblockProduct, type AdminProduct } from "../../shared/api/products";
 
 const PAGE_SIZE = 10;
 
@@ -21,11 +21,19 @@ const STATUS_STYLE: Record<string, { background: string; color: string }> = {
   inactive: { background: "#f3f4f6", color: "#6b7280" },
 };
 
-function StatusBadge({ status }: { status: AdminProduct['status'] }) {
-  const style = STATUS_STYLE[status] || STATUS_STYLE.inactive;
+function StatusBadge({ product }: { product: AdminProduct }) {
+  if (product.adminDisabled) {
+    return (
+      <span className="inline-flex px-2.5 py-0.5 rounded-full" style={{ fontSize: 12, fontWeight: 600, background: "#fee2e2", color: "#dc2626" }}>
+        Deshabilitado (Admin)
+      </span>
+    );
+  }
+
+  const style = STATUS_STYLE[product.status] || STATUS_STYLE.inactive;
   return (
     <span className="inline-flex px-2.5 py-0.5 rounded-full" style={{ fontSize: 12, fontWeight: 600, ...style }}>
-      {STATUS_LABEL[status] || "Desconocido"}
+      {STATUS_LABEL[product.status] || "Desconocido"}
     </span>
   );
 }
@@ -75,6 +83,7 @@ function SellerDetailCard({ sellerId }: { sellerId: string }) {
   );
 }
 
+// ── Componente del Panel de Detalle ──
 function DetailPanel({ product, onClose }: { product: AdminProduct; onClose: () => void }) {
   return (
     <div className="detail-overlay" onClick={onClose}>
@@ -90,8 +99,10 @@ function DetailPanel({ product, onClose }: { product: AdminProduct; onClose: () 
         <div className="detail-body">
           <div className="detail-title-section">
             <div className="detail-title-row">
-              <h3 className="detail-product-title">{product.title}</h3>
-              <StatusBadge status={product.status} />
+              <h3 className="detail-product-title" style={{ textDecoration: product.adminDisabled ? 'line-through' : 'none', color: product.adminDisabled ? '#9ca3af' : '#111827' }}>
+                {product.title}
+              </h3>
+              <StatusBadge product={product} />
             </div>
             <p className="detail-product-desc">
               {product.description || "Sin descripción proporcionada."}
@@ -113,8 +124,16 @@ function DetailPanel({ product, onClose }: { product: AdminProduct; onClose: () 
             </div>
           </div>
 
+          {product.adminDisabled && (
+            <div style={{ background: "#fef2f2", border: "1px solid #fecaca", display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', borderRadius: '12px', marginTop: '4px' }}>
+              <EyeOff size={20} style={{ color: "#dc2626", flexShrink: 0 }} />
+              <p style={{ fontSize: 13, color: "#991b1b", margin: 0, lineHeight: 1.4 }}>
+                Este producto está deshabilitado por administración. Ya no es visible en el catálogo y el vendedor no puede reactivarlo por su cuenta.
+              </p>
+            </div>
+          )}
+
           <SellerDetailCard sellerId={product.sellerId} />
-          
         </div>
       </div>
     </div>
@@ -122,10 +141,17 @@ function DetailPanel({ product, onClose }: { product: AdminProduct; onClose: () 
 }
 
 export function ProductsPage() {
+  const queryClient = useQueryClient();
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [toast, setToast] = useState<{msg: string, type: 'success' | 'error'} | null>(null);
+
+  const showToast = (msg: string, type: 'success' | 'error') => {
+    setToast({msg, type});
+    setTimeout(() => setToast(null), 3000);
+  };
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
@@ -141,6 +167,32 @@ export function ProductsPage() {
     retry: 1,
   });
 
+  const blockMutation = useMutation({
+    mutationFn: blockProduct,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      showToast("Producto deshabilitado por administración.", 'success');
+    },
+    onError: () => showToast("Error al intentar deshabilitar el producto.", 'error')
+  });
+
+  const unblockMutation = useMutation({
+    mutationFn: unblockProduct,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      showToast("Producto rehabilitado correctamente.", 'success');
+    },
+    onError: () => showToast("Error al intentar rehabilitar el producto.", 'error')
+  });
+
+  const handleToggleBlock = (product: AdminProduct) => {
+    if (product.adminDisabled) {
+      unblockMutation.mutate(product.id);
+    } else {
+      blockMutation.mutate(product.id);
+    }
+  };
+
   const products = data?.data || [];
   const total = data?.total || 0;
   const totalPages = Math.ceil(total / PAGE_SIZE);
@@ -149,6 +201,12 @@ export function ProductsPage() {
 
   return (
     <div className="users-page-container">
+      {toast && (
+        <div className={`toast ${toast.type}`}>
+          {toast.msg}
+        </div>
+      )}
+
       {selectedProduct && (
         <DetailPanel product={selectedProduct} onClose={() => setSelectedId(null)} />
       )}
@@ -179,7 +237,7 @@ export function ProductsPage() {
                 <th>Categoría</th>
                 <th>Precio</th>
                 <th>Estado</th>
-                <th style={{ textAlign: "center" }}>Detalle</th>
+                <th style={{ textAlign: "center" }}>Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -199,10 +257,11 @@ export function ProductsPage() {
                 </tr>
               ) : (
                 products.map((product) => (
-                  <tr key={product.id}>
+                  <tr key={product.id} style={{ opacity: product.adminDisabled ? 0.6 : 1 }}>
                     <td>
-                      {/* Ya no muestra el ID del producto por debajo, queda solo el título limpio */}
-                      <p style={{ fontSize: 14, fontWeight: 500, color: "#111827", margin: 0 }}>{product.title}</p>
+                      <p style={{ fontSize: 14, fontWeight: 500, color: "#111827", margin: 0, textDecoration: product.adminDisabled ? 'line-through' : 'none' }}>
+                        {product.title}
+                      </p>
                     </td>
                     <td>
                       <SellerName sellerId={product.sellerId} />
@@ -211,16 +270,26 @@ export function ProductsPage() {
                     <td style={{ fontSize: 14, fontWeight: 600, color: "#111827" }}>
                       {formatPrice(product.price)}
                     </td>
-                    <td><StatusBadge status={product.status} /></td>
-                    <td style={{ textAlign: "center" }}>
-                      <button
-                        onClick={() => setSelectedId(product.id)}
-                        className="icon-btn"
-                        style={{ background: "#f3f4f6", color: "#4b5563", margin: "0 auto" }}
-                        title="Ver detalle completo"
-                      >
-                        <ChevronRight size={18} />
-                      </button>
+                    <td><StatusBadge product={product} /></td>
+                    <td>
+                      <div className="action-buttons-group" style={{ justifyContent: "center" }}>
+                        <button
+                          onClick={() => handleToggleBlock(product)}
+                          disabled={blockMutation.isPending || unblockMutation.isPending}
+                          className={`icon-btn ${product.adminDisabled ? 'unblock-btn' : 'block-btn'}`}
+                          title={product.adminDisabled ? "Rehabilitar producto" : "Deshabilitar producto"}
+                        >
+                          {product.adminDisabled ? <Eye size={18} /> : <EyeOff size={18} />}
+                        </button>
+                        <button
+                          onClick={() => setSelectedId(product.id)}
+                          className="icon-btn"
+                          style={{ background: "#f3f4f6", color: "#4b5563" }}
+                          title="Ver detalle completo"
+                        >
+                          <ChevronRight size={18} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))

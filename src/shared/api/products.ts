@@ -10,6 +10,7 @@ export interface AdminProduct {
   sellerId: string
   status: 'active' | 'inactive' | 'out_of_stock'
   createdAt: string
+  adminDisabled: boolean
 }
 
 export interface PaginatedProductResponse {
@@ -24,6 +25,7 @@ export async function getProducts(page: number = 1, limit: number = 10, search?:
     limit,
     offset: (page - 1) * limit,
     include_inactive: true,
+    include_blocked: true,
   }
   
   if (search) {
@@ -43,4 +45,13 @@ export interface SellerProfileResponse {
 export async function getSellerProfile(sellerId: string) {
   const { data } = await http.get<SellerProfileResponse>(`/profile/${sellerId}`)
   return data
+}
+export async function blockProduct(productId: string) {
+  const { data } = await http.patch<{ data: AdminProduct }>(`/catalog/products/${productId}/block`)
+  return data.data
+}
+
+export async function unblockProduct(productId: string) {
+  const { data } = await http.patch<{ data: AdminProduct }>(`/catalog/products/${productId}/unblock`)
+  return data.data
 }
