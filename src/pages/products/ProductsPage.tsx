@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Search, ChevronRight, X, ArrowLeft, ArrowRight, Eye, EyeOff } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getProducts, getSellerProfile, blockProduct, unblockProduct, type AdminProduct } from "../../shared/api/products";
+import { getProducts, getSellerProfile, blockProduct, unblockProduct, getProductStatusHistory, type AdminProduct } from "../../shared/api/products";
 
 const PAGE_SIZE = 10;
 
@@ -83,6 +83,70 @@ function SellerDetailCard({ sellerId }: { sellerId: string }) {
   );
 }
 
+const HISTORY_STATE_LABEL: Record<string, string> = {
+  active: "Activo",
+  out_of_stock: "Sin stock",
+  inactive: "Pausado (Vendedor)",
+  admin_disabled: "Deshabilitado (Admin)",
+};
+
+const HISTORY_STATE_STYLE: Record<string, { background: string; color: string }> = {
+  active: { background: "#dcfce7", color: "#16a34a" },
+  out_of_stock: { background: "#fef9c3", color: "#a16207" },
+  inactive: { background: "#f3f4f6", color: "#6b7280" },
+  admin_disabled: { background: "#fee2e2", color: "#dc2626" },
+};
+
+function HistoryStateBadge({ state }: { state: string | null }) {
+  if (!state) return <span style={{ fontSize: 12, color: "#9ca3af", fontStyle: "italic" }}>—</span>;
+  const style = HISTORY_STATE_STYLE[state] || { background: "#f3f4f6", color: "#6b7280" };
+  return (
+    <span className="inline-flex px-2 py-0.5 rounded-full" style={{ fontSize: 11, fontWeight: 600, ...style }}>
+      {HISTORY_STATE_LABEL[state] || state}
+    </span>
+  );
+}
+
+function StatusHistorySection({ productId }: { productId: string }) {
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["productStatusHistory", productId],
+    queryFn: () => getProductStatusHistory(productId),
+    staleTime: 1000 * 60,
+  });
+
+  return (
+    <div className="history-section">
+      <p className="seller-info-title">Historial de Cambios de Estado</p>
+      {isLoading ? (
+        <span style={{ color: "#9ca3af", fontSize: 13, fontStyle: "italic" }}>Cargando historial...</span>
+      ) : isError ? (
+        <span style={{ color: "#dc2626", fontSize: 13 }}>Error al cargar el historial.</span>
+      ) : !data || data.length === 0 ? (
+        <span style={{ color: "#9ca3af", fontSize: 13, fontStyle: "italic" }}>Sin cambios registrados.</span>
+      ) : (
+        <ol className="history-list">
+          {data.map((entry) => (
+            <li key={entry.id} className="history-entry">
+              <div className="history-dot" />
+              <div className="history-content">
+                <div className="history-states">
+                  <HistoryStateBadge state={entry.previousState} />
+                  <span style={{ fontSize: 12, color: "#9ca3af", margin: "0 4px" }}>→</span>
+                  <HistoryStateBadge state={entry.newState} />
+                </div>
+                <div className="history-meta">
+                  <span>{new Date(entry.changedAt).toLocaleString("es-AR", { dateStyle: "medium", timeStyle: "short" })}</span>
+                  {entry.changedByRole && <span className="history-role">{entry.changedByRole}</span>}
+                </div>
+              </div>
+            </li>
+          ))}
+        </ol>
+      )}
+    </div>
+  );
+}
+
 // ── Componente del Panel de Detalle ──
 function DetailPanel({ product, onClose }: { product: AdminProduct; onClose: () => void }) {
   return (
@@ -134,6 +198,7 @@ function DetailPanel({ product, onClose }: { product: AdminProduct; onClose: () 
           )}
 
           <SellerDetailCard sellerId={product.sellerId} />
+          <StatusHistorySection productId={product.id} />
         </div>
       </div>
     </div>

@@ -55,3 +55,21 @@ export async function unblockProduct(productId: string) {
   const { data } = await http.patch<{ data: AdminProduct }>(`/catalog/products/${productId}/unblock`)
   return data.data
 }
+
+export interface ProductStatusHistoryEntry {
+  id: string
+  previousState: string | null
+  newState: string
+  changedAt: string
+  changedBy: string | null
+  changedByRole: string | null
+}
+
+export interface ProductStatusHistoryResponse {
+  data: ProductStatusHistoryEntry[]
+}
+
+export async function getProductStatusHistory(productId: string) {
+  const { data } = await http.get<ProductStatusHistoryResponse>(`/catalog/products/${productId}/status-history`)
+  return data.data
+}
