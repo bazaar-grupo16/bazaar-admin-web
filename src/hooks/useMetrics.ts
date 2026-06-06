@@ -1,6 +1,4 @@
 import { useState, useEffect } from 'react';
-import { MOCK_USERS_METRICS } from '../pages/metrics/mockData.ts';
-import { getAccessToken } from '../shared/auth/session.ts';
 import { http } from '../shared/api/http.ts';
 
 export type Interval = 'day' | 'week' | 'month';
@@ -60,11 +58,7 @@ export function useUsersMetrics(startDate: string, endDate: string, interval: In
         if (isMounted) setData(res);
       })
       .catch((err) => {
-        if (isMounted) {
-          console.warn('API call to /users/admin/metrics/users failed, using mock data fallback.', err);
-          setData(MOCK_USERS_METRICS as UsersMetricsResponse);
-          setError(null);
-        }
+        if (isMounted) setError(err);
       })
       .finally(() => {
         if (isMounted) setIsLoading(false);
