@@ -387,7 +387,7 @@ export function MetricsPage() {
                         <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} />
                         <Tooltip
                           contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid #e5e7eb" }}
-                          formatter={(v: number) => [v, "Órdenes"]}
+                          formatter={(v) => [v ?? 0, "Órdenes"]}
                         />
                         <Area
                           type="monotone"
@@ -415,7 +415,7 @@ export function MetricsPage() {
                         <YAxis type="category" dataKey="label" tick={{ fontSize: 11, fill: "#9ca3af" }} width={60} />
                         <Tooltip
                           contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid #e5e7eb" }}
-                          formatter={(v: number) => [v, "Órdenes"]}
+                          formatter={(v) => [v ?? 0, "Órdenes"]}
                         />
                         <Bar dataKey="count" radius={[0, 4, 4, 0]}>
                           {statusDist.map((entry, idx) => (
@@ -448,7 +448,7 @@ export function MetricsPage() {
                       <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} />
                       <Tooltip
                         contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid #e5e7eb" }}
-                        formatter={(v: number) => [`$${v.toFixed(0)}K`, "Ingresos"]}
+                        formatter={(v) => [`$${Number(v ?? 0).toFixed(0)}K`, "Ingresos"]}
                       />
                       <Area
                         type="monotone"
@@ -560,7 +560,7 @@ export function MetricsPage() {
                       <YAxis type="category" dataKey="category" tick={{ fontSize: 11, fill: "#9ca3af" }} width={100} />
                       <Tooltip
                         contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid #e5e7eb" }}
-                        formatter={(v: number) => [formatPrice(v), "Ingresos"]}
+                        formatter={(v) => [formatPrice(Number(v ?? 0)), "Ingresos"]}
                       />
                       <Bar dataKey="revenue" radius={[0, 4, 4, 0]}>
                         {categoryMetrics.map((_, idx) => (
