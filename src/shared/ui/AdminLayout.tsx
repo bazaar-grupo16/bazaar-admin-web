@@ -1,4 +1,5 @@
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { useAuth } from '../auth'
 
 const links = [
   { to: '/', label: 'Dashboard', end: true },
@@ -9,6 +10,14 @@ const links = [
 ]
 
 export function AdminLayout() {
+  const { admin, logout } = useAuth()
+  const navigate = useNavigate()
+
+  function handleLogout() {
+    logout()
+    navigate('/login', { replace: true })
+  }
+
   return (
     <div className="admin-layout">
       <aside className="sidebar">
@@ -23,7 +32,17 @@ export function AdminLayout() {
       </aside>
 
       <div className="admin-content">
-        <header className="header">Bazaar Admin</header>
+        <header className="header">
+          <span>Bazaar Admin</span>
+          <div className="header-actions">
+            {admin ? (
+              <span className="admin-identity">{admin.name || admin.email}</span>
+            ) : null}
+            <button type="button" className="logout-button" onClick={handleLogout}>
+              Cerrar sesión
+            </button>
+          </div>
+        </header>
         <main className="page-content">
           <Outlet />
         </main>
