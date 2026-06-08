@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Search, ChevronRight, X, ArrowLeft, ArrowRight, Package } from "lucide-react";
+import { Search, ChevronRight, X, ArrowLeft, ArrowRight, Package, Copy, Check } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { getOrders, getOrder } from "../../shared/api/orders";
 
@@ -170,6 +170,13 @@ export function OrdersPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [page, setPage] = useState(1);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  function copyId(id: string) {
+    navigator.clipboard.writeText(id);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 1500);
+  }
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
@@ -262,9 +269,18 @@ export function OrdersPage() {
                 orders.map((order) => (
                   <tr key={order.order_id}>
                     <td>
-                      <p style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: 0, fontFamily: 'monospace' }}>
-                        #{order.order_id.split("-")[0]}
-                      </p>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ fontSize: 14, fontWeight: 600, color: "#111827", fontFamily: 'monospace' }}>
+                          {order.order_id.split("-")[0]}…
+                        </span>
+                        <button
+                          onClick={() => copyId(order.order_id)}
+                          title={order.order_id}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px', lineHeight: 1, color: copiedId === order.order_id ? '#16a34a' : '#9ca3af', display: 'flex' }}
+                        >
+                          {copiedId === order.order_id ? <Check size={14} /> : <Copy size={14} />}
+                        </button>
+                      </div>
                     </td>
                     <td>
                       <span style={{ fontSize: 13, color: "#4b5563", fontFamily: 'monospace' }}>
