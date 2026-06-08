@@ -1,5 +1,4 @@
-import { createBrowserRouter } from 'react-router-dom'
-import { DashboardPage } from '../pages/dashboard/DashboardPage'
+import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { LoginPage } from '../pages/login/LoginPage'
 import { MetricsPage } from '../pages/metrics/MetricsPage'
 import { OrdersPage } from '../pages/orders/OrdersPage'
@@ -27,7 +26,7 @@ export const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <DashboardPage />,
+        element: <Navigate to="/metrics" replace />,
       },
       {
         path: 'users',
