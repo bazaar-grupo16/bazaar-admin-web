@@ -167,7 +167,6 @@ function DetailPanel({ orderId, onClose }: { orderId: string; onClose: () => voi
 
 export function OrdersPage() {
   const [searchInput, setSearchInput] = useState("");
-  const [searchId, setSearchId] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [page, setPage] = useState(1);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -177,9 +176,6 @@ export function OrdersPage() {
       const cleanSearch = searchInput.trim();
       if (cleanSearch.length === 36) {
         setSelectedId(cleanSearch);
-        setSearchId("");
-      } else {
-        setSearchId(cleanSearch);
       }
       setPage(1);
     }, 500);
