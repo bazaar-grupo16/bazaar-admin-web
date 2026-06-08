@@ -80,7 +80,7 @@ function DetailPanel({ orderId, onClose }: { orderId: string; onClose: () => voi
               <div className="detail-title-section">
                 <div className="detail-title-row">
                   <h3 className="detail-product-title" style={{ fontSize: 18 }}>
-                    #{order.order_id.split("-")[0]}
+                    #{order.order_id}
                   </h3>
                   <StatusBadge status={order.status} />
                 </div>
