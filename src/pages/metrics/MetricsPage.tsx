@@ -215,7 +215,7 @@ export function MetricsPage() {
         {/* Header */}
         <div className="flex items-start justify-between mb-6 flex-wrap gap-4">
           <div>
-            <h1 style={{ color: "#111827", marginBottom: 4 }}>Métricas</h1>
+            <h1 className="main-title" style={{ marginBottom: 4 }}>Métricas</h1>
             <p style={{ fontSize: 14, color: "#6b7280" }}>Actividad de la plataforma</p>
           </div>
           <div className="flex items-center gap-3">
